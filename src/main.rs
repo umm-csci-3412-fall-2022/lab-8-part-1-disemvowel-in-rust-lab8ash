@@ -3,9 +3,13 @@ use std::fs;
 use std::path::Path;
 
 //The following crates are used for testing
+#[cfg(test)]
 extern crate tempfile; //Creates temp files and directories
+#[cfg(test)]
 use assert_cmd::prelude::*; // Add methods on commands
+#[cfg(test)]
 use predicates::prelude::*;
+#[cfg(test)]
 use std::process::Command; // Run programs // Used for writing assertions
 
 fn main() {
@@ -24,13 +28,15 @@ fn main() {
     //  * Write the disemvoweled text using write_file
 
     // Replace String::from("dummy text") with what you get from read_file
-    let s = String::from("dummy text");
+    let from = Path::new(args.get(1).expect("Not enough arguments"));
+    let to = Path::new(args.get(2).expect("Not enough arguments"));
+    let s = read_file(&from);
 
     let s_disemvowel = disemvowel(&s);
 
     // Use command-line arguments for the name of the file,
     // and s_disemvowel for the text to write out.
-    write_file(Path::new("dummy.txt"), "output string");
+    write_file(&to, &s_disemvowel);
 }
 
 fn read_file(path: &Path) -> String {
@@ -42,7 +48,8 @@ fn write_file(path: &Path, s: &str) {
 
 //TODO: Return the input string without vowels.
 fn disemvowel(s: &str) -> String {
-    String::from(s)
+    let vowels = ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'];
+    s.chars().filter(|c| !vowels.contains(c)).collect()
 }
 
 // Everything from here down is Rust test code. You shouldn't need to
@@ -113,7 +120,7 @@ mod tests {
         use super::*;
         #[test]
         fn requires_two_arguments() {
-            let mut cmd = Command::cargo_bin("disemvowel-in-rust").unwrap();
+            let mut cmd = Command::new("target/debug/disemvowel-in-rust");
             cmd.arg("1");
             cmd.assert()
                 .failure()
@@ -121,7 +128,7 @@ mod tests {
         }
         #[test]
         fn requires_read_file() {
-            let mut cmd = Command::cargo_bin("disemvowel-in-rust").unwrap();
+            let mut cmd = Command::new("target/debug/disemvowel-in-rust");
             cmd.arg("/this/path/does/not/exist")
                 .arg("output/path/doesnt/matter");
             cmd.assert()
